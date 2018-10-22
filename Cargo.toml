@@ -24,7 +24,7 @@ gimli = "0.16.1"
 lazy_static = "1.0"
 libc = "0.2.40"
 memmap = "0.7.0"
-nix = "0.11.0"
+nix = {git = "https://github.com/nix-rust/nix"}
 object = "0.10"
 proc-macro2 = "0.4.20"
 quick-xml = "0.13.0"

@@ -7,6 +7,15 @@ use nix::Result;
 
 const RIP: u8 = 128;
 
+#[cfg(target_os = "macos")]
+type AddressType = *mut nix::libc::c_char;
+#[cfg(target_os = "linux")]
+type AddressType = *mut c_void;
+
+#[cfg(target_os = "macos")]
+type DataType = nix::libc::c_int;
+#[cfg(target_os = "linux")]
+type DataType = *mut c_void;
 
 pub fn trace_children(pid: Pid) -> Result<()> {
     //TODO need to check support.
@@ -32,31 +41,27 @@ pub fn single_step(pid: Pid) -> Result<()> {
 
 #[allow(deprecated)]
 pub fn read_address(pid: Pid, address:u64) -> Result<c_long> {
-    unsafe {
-        ptrace(Request::PTRACE_PEEKDATA, pid, address as * mut c_void, ptr::null_mut())
-    }
+    read(pid, address as AddressType).map(|x| x as c_long)
 }
 
 #[allow(deprecated)]
 pub fn write_to_address(pid: Pid,
                         address: u64,
-                        data: i64) -> Result<c_long> {
-    unsafe {
-        ptrace(Request::PTRACE_POKEDATA, pid, address as * mut c_void, data as * mut c_void)
-    }
+                        data: i64) -> Result<()> {
+    write(pid, address as AddressType, data as DataType)
 }
 
 #[allow(deprecated)]
 pub fn current_instruction_pointer(pid: Pid) -> Result<c_long> {
     unsafe {
-        ptrace(Request::PTRACE_PEEKUSER, pid, RIP as * mut c_void, ptr::null_mut())
+        ptrace(Request::PTRACE_PEEKUSER, pid, RIP as AddressType, ptr::null_mut())
     }
 }
 
 #[allow(deprecated)]
 pub fn set_instruction_pointer(pid: Pid, pc: u64) -> Result<c_long> {
     unsafe {
-        ptrace(Request::PTRACE_POKEUSER, pid, RIP as * mut c_void, pc as * mut c_void)
+        ptrace(Request::PTRACE_POKEUSER, pid, RIP as AddressType, pc as DataType)
     }
 }
 
