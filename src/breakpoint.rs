@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use nix::libc::c_long;
 use nix::unistd::Pid;
 use nix::{Result, Error};
 use ptrace_control::*;

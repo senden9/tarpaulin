@@ -1,8 +1,9 @@
-use std::ptr;
 use nix::sys::signal::Signal;
 use nix::sys::ptrace::*;
 use nix::libc::{c_void, c_long};
 use nix::unistd::Pid;
+use nix::errno::Errno;
+use nix::Error;
 use nix::Result;
 
 const RIP: u8 = 128;
@@ -34,17 +35,14 @@ pub fn continue_exec(pid: Pid, sig: Option<Signal>) -> Result<()> {
     cont(pid, sig)
 }
 
-#[allow(deprecated)]
 pub fn single_step(pid: Pid) -> Result<()> {
     step(pid, None)
 }
 
-#[allow(deprecated)]
 pub fn read_address(pid: Pid, address:u64) -> Result<c_long> {
     read(pid, address as AddressType).map(|x| x as c_long)
 }
 
-#[allow(deprecated)]
 pub fn write_to_address(pid: Pid,
                         address: u64,
                         data: i64) -> Result<()> {
@@ -53,15 +51,22 @@ pub fn write_to_address(pid: Pid,
 
 #[allow(deprecated)]
 pub fn current_instruction_pointer(pid: Pid) -> Result<c_long> {
-    unsafe {
-        ptrace(Request::PTRACE_PEEKUSER, pid, RIP as AddressType, ptr::null_mut())
+    let ret = unsafe {
+        Errno::clear();
+        libc::ptrace(Request::PTRACE_PEEKUSER as RequestType, libc::pid_t::from(pid), RIP as AddressType, 0 as DataType)
+    };
+
+    match Errno::result(ret) {
+        Ok(..) | Err(Error::Sys(Errno::UnknownErrno)) => Ok(ret),
+        err @ Err(..) => err,
     }
 }
 
 #[allow(deprecated)]
-pub fn set_instruction_pointer(pid: Pid, pc: u64) -> Result<c_long> {
+pub fn set_instruction_pointer(pid: Pid, pc: u64) -> Result<()> {
     unsafe {
-        ptrace(Request::PTRACE_POKEUSER, pid, RIP as AddressType, pc as DataType)
+        Errno::clear();
+        Errno::result(libc::ptrace(Request::PTRACE_POKEUSER as RequestType, libc::pid_t::from(pid), RIP as AddressType, pc as DataType)).map(|_|())
     }
 }
 
