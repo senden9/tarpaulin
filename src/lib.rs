@@ -39,11 +39,11 @@ mod source_analysis;
 
 /// Should be unnecessary with a future nix crate release.
 mod personality;
-mod ptrace_control;
+mod tracing;
 
 use config::*;
 use test_loader::*;
-use ptrace_control::*;
+use tracing::*;
 use statemachine::*;
 use traces::*;
 
